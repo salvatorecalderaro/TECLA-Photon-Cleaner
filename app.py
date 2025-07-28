@@ -17,7 +17,8 @@ def convert_endian(df):
     for col in df.columns:
         dtype = df[col].dtype
         if dtype.byteorder == ">" and np.issubdtype(dtype, np.number):
-            df[col] = df[col].values.byteswap().newbyteorder().copy()
+            swapped = df[col].values.byteswap()
+            df[col] = swapped.view(swapped.dtype.newbyteorder()).copy()
     return df
 
 
@@ -57,14 +58,14 @@ def process_file(filename, df):
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    for _, row in df.iterrows():
+    for i, (_, row) in enumerate(df.iterrows()):
         t = int((row["TIME"] - np.min(times)) / step)
         occurrenceel[t] += 1
         arrivalel[t].append(row["TIME"])
         posXel[t].append(row["RAWX"])
         posYel[t].append(row["RAWY"])
         energyel[t].append(row["PI"])
-        progress_bar.progress((t + 1) / len(df))
+        progress_bar.progress((i + 1) / len(df))
 
     status_text.text("✅ Curve created!")
 
@@ -191,7 +192,7 @@ def process_file(filename, df):
 
 # === Streamlit UI ===
 st.set_page_config(page_title="TECLA Photon Cleaner")
-st.title("🔬 TECLA Photon Cleaner")
+st.title("🔭 TECLA Photon Cleaner")
 st.write(
     "Upload a `.fits` file to clean noisy photon bins and download the cleaned result."
 )
