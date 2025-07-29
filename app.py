@@ -22,6 +22,25 @@ def convert_endian(df):
     return df
 
 
+def plot_noisy_curve(filename, realcount, realgrid, num):
+    name = filename.split(".fits")[0]
+    path = f"{name}_NOISY.png"
+    y_original = [realcount[t] for t in range(0, num)]
+    x_vals = [realgrid[t] for t in range(0, num)]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_vals, y_original, color="red", label="Original Count")
+    plt.xlabel("Time (realgrid)")
+    plt.ylabel("Number of Photons")
+    plt.title(f"{filename}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(path, dpi=dpi)
+    plt.close()
+    return path
+
+
 def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin):
     name = filename.split(".fits")[0]
     path = f"{name}_TECLA.png"
@@ -91,6 +110,17 @@ def process_file(filename, df):
             padded = np.pad(intertimes, (realcount[num] - len(intertimes), 0))
             intertbin[num] = padded
             num += 1
+    
+    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num)
+    st.session_state["plot_path"] = noisy_path_img
+    st.image(
+        st.session_state["plot_path"],
+        caption="Original curve",
+        use_container_width=True,
+    )
+
+    
+    
 
     startG, endG = 1, 2000
     startB, endB = 5300, 5800
