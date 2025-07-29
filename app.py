@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 dpi = 1000
 nt = 2**13
-n_iterations = 10000
+n_iterations = 10**4
 
 
 def convert_endian(df):
