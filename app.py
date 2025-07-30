@@ -9,7 +9,6 @@ from astropy.table import Table
 import matplotlib.pyplot as plt
 
 dpi = 1000
-nt = 2**13
 n_iterations = 10**4
 
 
@@ -62,7 +61,7 @@ def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin):
     return path
 
 
-def process_file(filename, df):
+def process_file(filename, df,nt):    
     times = df["TIME"].sort_values().values
     step = (np.max(times) - np.min(times)) / nt
     grid = np.array([np.min(times) + step * i for i in range(nt + 1)])
@@ -86,7 +85,7 @@ def process_file(filename, df):
         energyel[t].append(row["PI"])
         progress_bar.progress((i + 1) / len(df))
 
-    status_text.text("✅ Curve created!")
+    
 
     count = {t: occurrenceel[t] for t in range(0, nt)}
     realgrid = {}
@@ -110,19 +109,21 @@ def process_file(filename, df):
             padded = np.pad(intertimes, (realcount[num] - len(intertimes), 0))
             intertbin[num] = padded
             num += 1
-    
+
+    status_text.text("✅ Curve created!")
+
     noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num)
     st.session_state["plot_path"] = noisy_path_img
     st.image(
         st.session_state["plot_path"],
-        caption="Original curve",
+        caption=f"Original curve - N. Bins {nt}",
         use_container_width=True,
     )
 
-    
-    
-
-    startG, endG = 1, 2000
+    startG, endG = (
+        1,
+        2000,
+    )  # TODO pernmetetre all'utenet di selezionare la parte buona e non.
     startB, endB = 5300, 5800
     good = [time for t in range(startG, endG + 1) for time in arrbin.get(t, [])]
     bad = [time for t in range(startB, endB + 1) for time in arrbin.get(t, [])]
@@ -184,7 +185,7 @@ def process_file(filename, df):
                     (abs(metric - target)) ** 2
                     + (abs(metricElow - targetElow)) ** 2
                     + (abs(metricEhigh - targetEhigh)) ** 2
-                )
+                )  # TODO aggiungere nuova metrica
 
                 if score < best_score:
                     best_score = score
@@ -241,10 +242,15 @@ if uploaded_file:
         df = convert_endian(df)
 
         st.success(f"✅ File `{filename}` uploaded successfully.")
+        
+        st.sidebar.header("⚙️ Settings")
+        bin_options = [2**i for i in range(7, 17)]  # [128, 256, ..., 65536]
+        nt = st.sidebar.selectbox("Select number of bins (power of 2)", bin_options)
+        st.info(f"📊 Number of bins selected: **{nt}**")
 
         if st.button("🚀 Run TECLA Cleaning"):
             with st.spinner("Cleaning in progress..."):
-                cleaned_path, plot_path = process_file(filename=filename, df=df)
+                cleaned_path, plot_path = process_file(filename=filename, df=df, nt=nt)
                 st.session_state["cleaned_path"] = cleaned_path
                 st.session_state["plot_path"] = plot_path
 
