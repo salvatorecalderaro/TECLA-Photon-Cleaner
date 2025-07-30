@@ -180,13 +180,17 @@ def process_file(filename, df,nt):
                 en_high = [e for e in en_sample if 2000 < e <= 10000]
                 metricElow = np.median(en_low) if en_low else 999999
                 metricEhigh = np.median(en_high) if en_high else 999999
+                
+                glowcurvetemp = [newrealcount[i] for i in range(t)] + [nG]
+                metrictime = np.mean(glowcurvetemp)
+                targettime = np.var(glowcurvetemp) if len(glowcurvetemp) > 1 else 0
 
                 score = np.sqrt(
                     (abs(metric - target)) ** 2
                     + (abs(metricElow - targetElow)) ** 2
                     + (abs(metricEhigh - targetEhigh)) ** 2
-                )  # TODO aggiungere nuova metrica
-
+                    + (abs(metrictime - targettime)) ** 2
+                )
                 if score < best_score:
                     best_score = score
                     best_sample = {
