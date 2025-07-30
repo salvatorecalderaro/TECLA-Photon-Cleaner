@@ -1,18 +1,31 @@
-import numpy as np 
+import numpy as np
 import streamlit as st
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
 from plot_utils import plot_noisy_curve, plot_or_vs_opt
-from random import randint,sample
+from random import randint, sample
 
 n_iterations = 10**4
 
 
+def convert_endian(df):
+    for col in df.columns:
+        dtype = df[col].dtype
+        if dtype.byteorder == ">" and np.issubdtype(dtype, np.number):
+            swapped = df[col].values.byteswap()
+            df[col] = swapped.view(swapped.dtype.newbyteorder()).copy()
+    return df
 
 
+def read_file(path):
+    data = fits.getdata(path, ext=1)
+    df = pd.DataFrame(data)
+    df = convert_endian(df)
+    return df
 
-def clean_curve(filename, df,nt):    
+
+def clean_curve(filename, df, nt):
     times = df["TIME"].sort_values().values
     step = (np.max(times) - np.min(times)) / nt
     grid = np.array([np.min(times) + step * i for i in range(nt + 1)])
@@ -35,8 +48,6 @@ def clean_curve(filename, df,nt):
         posYel[t].append(row["RAWY"])
         energyel[t].append(row["PI"])
         progress_bar.progress((i + 1) / len(df))
-
-    
 
     count = {t: occurrenceel[t] for t in range(0, nt)}
     realgrid = {}
@@ -63,7 +74,7 @@ def clean_curve(filename, df,nt):
 
     status_text.text("✅ Curve created!")
 
-    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num,nt)
+    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num, nt)
     st.session_state["plot_path"] = noisy_path_img
     st.image(
         st.session_state["plot_path"],
@@ -131,7 +142,7 @@ def clean_curve(filename, df,nt):
                 en_high = [e for e in en_sample if 2000 < e <= 10000]
                 metricElow = np.median(en_low) if en_low else 999999
                 metricEhigh = np.median(en_high) if en_high else 999999
-                
+
                 glowcurvetemp = [newrealcount[i] for i in range(t)] + [nG]
                 metrictime = np.mean(glowcurvetemp)
                 targettime = np.var(glowcurvetemp) if len(glowcurvetemp) > 1 else 0
@@ -174,4 +185,3 @@ def clean_curve(filename, df,nt):
 
     plot_path = plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin)
     return cleaned_path, plot_path
-

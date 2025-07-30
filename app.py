@@ -1,19 +1,9 @@
 import streamlit as st
 import os
-import pandas as pd
-import numpy as np
 from tempfile import NamedTemporaryFile
-from astropy.io import fits
-from tecla_cleaner import clean_curve
+from tecla_cleaner import read_file, clean_curve
 
 
-def convert_endian(df):
-    for col in df.columns:
-        dtype = df[col].dtype
-        if dtype.byteorder == ">" and np.issubdtype(dtype, np.number):
-            swapped = df[col].values.byteswap()
-            df[col] = swapped.view(swapped.dtype.newbyteorder()).copy()
-    return df
 
 
 # === Streamlit UI ===
@@ -31,10 +21,8 @@ if uploaded_file:
         tmp_fits_path = tmp_fits.name
 
     try:
-        data = fits.getdata(tmp_fits_path, ext=1)
-        df = pd.DataFrame(data)
         filename = os.path.basename(uploaded_file.name)
-        df = convert_endian(df)
+        glowcurvenoise = read_file(tmp_fits_path)
 
         st.success(f"✅ File `{filename}` uploaded successfully.")
 
@@ -45,7 +33,7 @@ if uploaded_file:
 
         if st.button("🚀 Run TECLA Cleaning"):
             with st.spinner("Cleaning in progress..."):
-                cleaned_path, plot_path = clean_curve(filename=filename, df=df, nt=nt)
+                cleaned_path, plot_path = clean_curve(filename=filename, df=glowcurvenoise, nt=nt)
                 st.session_state["cleaned_path"] = cleaned_path
                 st.session_state["plot_path"] = plot_path
 
