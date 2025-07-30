@@ -21,7 +21,7 @@ def convert_endian(df):
     return df
 
 
-def plot_noisy_curve(filename, realcount, realgrid, num):
+def plot_noisy_curve(filename, realcount, realgrid, num,nt):
     name = filename.split(".fits")[0]
     path = f"{name}_NOISY.png"
     y_original = [realcount[t] for t in range(0, num)]
@@ -31,7 +31,7 @@ def plot_noisy_curve(filename, realcount, realgrid, num):
     plt.plot(x_vals, y_original, color="red", label="Original Count")
     plt.xlabel("Time (realgrid)")
     plt.ylabel("Number of Photons")
-    plt.title(f"{filename}")
+    plt.title(f"{filename} - N. Bins {nt}")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
@@ -112,7 +112,7 @@ def process_file(filename, df,nt):
 
     status_text.text("✅ Curve created!")
 
-    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num)
+    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num,nt)
     st.session_state["plot_path"] = noisy_path_img
     st.image(
         st.session_state["plot_path"],
