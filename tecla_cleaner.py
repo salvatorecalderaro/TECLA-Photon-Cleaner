@@ -183,5 +183,5 @@ def clean_curve(filename, df, nt):
     cleaned_path = f"{name}_TECLA.fits"
     t.write(cleaned_path, overwrite=True)
 
-    plot_path = plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin)
+    plot_path = plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin,nt)
     return cleaned_path, plot_path
