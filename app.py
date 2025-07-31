@@ -6,7 +6,7 @@ from tecla_cleaner import read_file, clean_curve
 
 
 
-# === Streamlit UI ===
+# === Streamlit UI ===œ
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
 st.write(

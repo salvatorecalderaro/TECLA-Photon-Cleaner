@@ -26,6 +26,7 @@ def read_file(path):
 
 
 def clean_curve(filename, df, nt):
+    print("Original df shape: ", df.shape)
     times = df["TIME"].sort_values().values
     step = (np.max(times) - np.min(times)) / nt
     grid = np.array([np.min(times) + step * i for i in range(nt + 1)])
@@ -82,13 +83,11 @@ def clean_curve(filename, df, nt):
         use_container_width=True,
     )
 
-    startG, endG = (
-        1,
-        2000,
-    )  # TODO pernmetetre all'utenet di selezionare la parte buona e non.
-    startB, endB = 5300, 5800
+    startG, endG = 1,2000  
+    # TODO pernmetetre all'utenet di selezionare la parte buona e non.
+    #startB, endB = 5300, 5800
     good = [time for t in range(startG, endG + 1) for time in arrbin.get(t, [])]
-    bad = [time for t in range(startB, endB + 1) for time in arrbin.get(t, [])]
+    #bad = [time for t in range(startB, endB + 1) for time in arrbin.get(t, [])]
 
     intertbinG = np.diff(good)
     goodtM = np.median(
@@ -174,9 +173,14 @@ def clean_curve(filename, df, nt):
 
     status_text.text("✅ Cleaning complete.")
 
-    bad = [time for t in range(startB, endB + 1) for time in newarrbin.get(t, [])]
-    bad_set = set(bad)
-    df["IS_NOISY"] = df["TIME"].apply(lambda t: 1 if t in bad_set else 0)
+    
+    kept_times = set()
+    for t in range(num):
+        kept_times.update(newarrbin[t])
+
+    df["IS_NOISY"] = df["TIME"].apply(lambda x: 0 if x in kept_times else 1)
+    
+    print(f"Final df shape: {df.shape}")
 
     t = Table.from_pandas(df)
     name = filename.replace(".fits", "")
