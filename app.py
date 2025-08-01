@@ -10,22 +10,35 @@ os.environ["KALIEDO_SCOPE"] = "/tmp/kaleido"
 
 import subprocess
 
+
 def is_chrome_available():
     try:
         # Prova a eseguire il comando che verifica la presenza di chrome
-        subprocess.run(["google-chrome", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(
+            ["google-chrome", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         return True
     except Exception:
         return False
+
 
 chrome_installed = is_chrome_available()
 
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
-st.write("Upload a `.fits` file to clean noisy photon bins and download the cleaned result.")
+st.write(
+    "Upload a `.fits` file to clean noisy photon bins and download the cleaned result."
+)
 
 
-uploaded_file = st.file_uploader("📂 Upload a FITS file", type=["fits"], key=st.session_state.get("uploader_key", "default_uploader"))
+uploaded_file = st.file_uploader(
+    "📂 Upload a FITS file",
+    type=["fits"],
+    key=st.session_state.get("uploader_key", "default_uploader"),
+)
 
 if "uploaded_filename" not in st.session_state and not uploaded_file:
     st.info("Please upload a `.fits` file to start.")
@@ -38,16 +51,18 @@ nt = st.sidebar.selectbox("Select number of bins (power of 2)", bin_options)
 
 if uploaded_file:
     st.success(f"✅ File `{uploaded_file.name}` uploaded successfully.")
-    st.warning("⚠️ Please select the number of bins from the sidebar **before clicking 'Create Curve'**.")
+    st.warning(
+        "⚠️ Please select the number of bins from the sidebar **before clicking 'Create Curve'**."
+    )
     st.info(f"📊 Number of bins selected: **{nt}**")
 
     if (
-        "uploaded_filename" not in st.session_state or
-        st.session_state.uploaded_filename != uploaded_file.name or
-        "nt" not in st.session_state or
-        st.session_state.nt != nt
+        "uploaded_filename" not in st.session_state
+        or st.session_state.uploaded_filename != uploaded_file.name
+        or "nt" not in st.session_state
+        or st.session_state.nt != nt
     ):
-        
+
         with NamedTemporaryFile(delete=False, suffix=".fits") as tmp:
             tmp.write(uploaded_file.read())
             tmp_fits_path = tmp.name
@@ -67,9 +82,10 @@ if "uploaded_filename" in st.session_state:
     if not st.session_state.curve_created:
         if st.button("🎨 Create Curve"):
             with st.spinner("Generating curve..."):
-                realcount, realgrid, arrbin, enbin, posXbin, posYbin, intertbin, num = create_noisy_curve(
-                    st.session_state.glowcurvenoise,
-                    st.session_state.nt
+                realcount, realgrid, arrbin, enbin, posXbin, posYbin, intertbin, num = (
+                    create_noisy_curve(
+                        st.session_state.glowcurvenoise, st.session_state.nt
+                    )
                 )
                 st.session_state.curve_data = {
                     "realcount": realcount,
@@ -92,9 +108,13 @@ if "uploaded_filename" in st.session_state:
         nt = st.session_state.nt
 
         st.write("Select exactly TWO bins from the curve below")
-        st.markdown("🟢 Click once for the **start** and again for the **end** of the segment to be used.")
+        st.markdown(
+            "🟢 Click once for the **start** and again for the **end** of the segment to be used."
+        )
 
-        fig = plot_noisy_curve_interactive(st.session_state.uploaded_filename, realcount, realgrid, num, nt)
+        fig = plot_noisy_curve_interactive(
+            st.session_state.uploaded_filename, realcount, realgrid, num, nt
+        )
         clicked_points = plotly_events(fig, click_event=True, override_height=500)
 
         if st.button("🔄 Reset"):
@@ -105,12 +125,13 @@ if "uploaded_filename" in st.session_state:
                 if len(st.session_state.selected_points) < 2:
                     st.session_state.selected_points.append(pt)
                 else:
-                    st.warning("⚠️ You already selected two points. Click 'Reset' to start over.")
-
+                    st.warning(
+                        "⚠️ You already selected two points. Click 'Reset' to start over."
+                    )
 
         if len(st.session_state.selected_points) == 2:
-            x1 = st.session_state.selected_points[0]['x']
-            x2 = st.session_state.selected_points[1]['x']
+            x1 = st.session_state.selected_points[0]["x"]
+            x2 = st.session_state.selected_points[1]["x"]
 
             if x1 > x2:
                 x1, x2 = x2, x1
@@ -130,7 +151,20 @@ if "uploaded_filename" in st.session_state:
                     enbin = st.session_state.curve_data["enbin"]
                     posXbin = st.session_state.curve_data["posXbin"]
                     posYbin = st.session_state.curve_data["posYbin"]
-                    clean_curve_path, fig = clean_curve(st.session_state.uploaded_filename, glowcurvenoise, nt, realcount, realgrid, arrbin, enbin, posXbin, posYbin, num, startG, endG)
+                    clean_curve_path, fig = clean_curve(
+                        st.session_state.uploaded_filename,
+                        glowcurvenoise,
+                        nt,
+                        realcount,
+                        realgrid,
+                        arrbin,
+                        enbin,
+                        posXbin,
+                        posYbin,
+                        num,
+                        startG,
+                        endG,
+                    )
                     st.success("🧹 Cleaning completed!")
                     st.session_state["cleaned_path"] = clean_curve_path
                     st.session_state["plot"] = fig
@@ -140,13 +174,14 @@ if "uploaded_filename" in st.session_state:
                 clean_curve_path = st.session_state["cleaned_path"]
                 fig = st.session_state["plot"]
                 st.plotly_chart(fig)
+                html_bytes = fig.to_html().encode("utf-8")
                 st.download_button(
-                    label="🖼️ Download coomparison plot",
-                    data=fig.to_image(format="png"),
-                    file_name=f"{name}_{nt}_TECLA.png",
-                    mime="image/png",
+                    label="📄 Download interactive plot (HTML)",
+                    data=html_bytes,
+                    file_name=f"{name}_{nt}_TECLA_plot.html",
+                    mime="text/html",
                 )
-                
+
                 with open(st.session_state["cleaned_path"], "rb") as f:
                     st.download_button(
                         label="⬇️ Download Cleaned FITS File",
@@ -155,12 +190,18 @@ if "uploaded_filename" in st.session_state:
                         mime="application/fits",
                     )
 
-                
-
             if st.sidebar.button("🔄 Reset ALL"):
                 keys_to_clear = [
-                    "uploaded_filename", "glowcurvenoise", "tmp_fits_path", "curve_data",
-                    "selected_points", "curve_created", "cleaned_path", "plot", "nt", "uploader_key"
+                    "uploaded_filename",
+                    "glowcurvenoise",
+                    "tmp_fits_path",
+                    "curve_data",
+                    "selected_points",
+                    "curve_created",
+                    "cleaned_path",
+                    "plot",
+                    "nt",
+                    "uploader_key",
                 ]
                 for key in keys_to_clear:
                     if key in st.session_state:
