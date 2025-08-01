@@ -172,7 +172,7 @@ def clean_curve(
                 newposXbin[t] = best_sample["posX"]
                 newposYbin[t] = best_sample["posY"]
 
-        progress_bar.progress((t + 1) / num)
+        progress_bar.progress(min((t + 1) / num, 1.0))
 
     status_text.text("✅ Cleaning complete.")
 
