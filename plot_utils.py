@@ -1,7 +1,5 @@
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure, Scatter
-import kaleido
-kaleido.get_chrome_sync()
 
 
 def plot_noisy_curve_interactive(filename, realcount, realgrid, num, nt):

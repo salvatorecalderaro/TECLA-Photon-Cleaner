@@ -6,6 +6,8 @@ from plot_utils import plot_noisy_curve_interactive
 from streamlit_plotly_events import plotly_events
 import os
 
+os.environ["KALIEDO_SCOPE"] = "/tmp/kaleido"
+
 
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
@@ -93,6 +95,7 @@ if "uploaded_filename" in st.session_state:
                     st.session_state.selected_points.append(pt)
                 else:
                     st.warning("⚠️ You already selected two points. Click 'Reset' to start over.")
+
 
         if len(st.session_state.selected_points) == 2:
             x1 = st.session_state.selected_points[0]['x']
