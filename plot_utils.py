@@ -2,9 +2,6 @@
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure, Scatter
 
-dpi = 1000
-
-
 def plot_noisy_curve_interactive(filename, realcount, realgrid, num, nt):
     name = filename.split(".fits")[0]
     x = [realgrid[t] for t in range(num)]

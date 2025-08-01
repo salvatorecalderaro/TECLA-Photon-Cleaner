@@ -6,22 +6,21 @@ from plot_utils import plot_noisy_curve_interactive
 from streamlit_plotly_events import plotly_events
 import os
 
-# === Streamlit UI ===
+
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
 st.write("Upload a `.fits` file to clean noisy photon bins and download the cleaned result.")
 
-# File upload - sempre visibile
+
 uploaded_file = st.file_uploader("📂 Upload a FITS file", type=["fits"], key=st.session_state.get("uploader_key", "default_uploader"))
 
-# Se non abbiamo ancora un file caricato e nemmeno uno appena uploadato, blocca e mostra messaggio
 if "uploaded_filename" not in st.session_state and not uploaded_file:
     st.info("Please upload a `.fits` file to start.")
-    st.stop()  # blocca esecuzione finché non carichi un file
+    st.stop()
 
-# Sidebar per impostazioni
+
 st.sidebar.header("⚙️ Settings")
-bin_options = [2**i for i in range(7, 17)]  # [128, 256, ..., 65536]
+bin_options = [2**i for i in range(7, 17)]
 nt = st.sidebar.selectbox("Select number of bins (power of 2)", bin_options)
 
 if uploaded_file:
@@ -29,14 +28,13 @@ if uploaded_file:
     st.warning("⚠️ Please select the number of bins from the sidebar **before clicking 'Create Curve'**.")
     st.info(f"📊 Number of bins selected: **{nt}**")
 
-    # Controlla se è cambiato il file o la selezione
     if (
         "uploaded_filename" not in st.session_state or
         st.session_state.uploaded_filename != uploaded_file.name or
         "nt" not in st.session_state or
         st.session_state.nt != nt
     ):
-        # Salva file temporaneo e leggi
+        
         with NamedTemporaryFile(delete=False, suffix=".fits") as tmp:
             tmp.write(uploaded_file.read())
             tmp_fits_path = tmp.name
@@ -51,10 +49,8 @@ if uploaded_file:
         st.session_state.selected_points = []
         st.session_state.curve_created = False
 
-# Ora continua con la logica se abbiamo il file in session_state
-if "uploaded_filename" in st.session_state:
 
-    # === Create Curve Button ===
+if "uploaded_filename" in st.session_state:
     if not st.session_state.curve_created:
         if st.button("🎨 Create Curve"):
             with st.spinner("Generating curve..."):
@@ -75,7 +71,6 @@ if "uploaded_filename" in st.session_state:
                 st.session_state.curve_created = True
                 st.success("📈 Curve created! Now select two bins.")
 
-    # === Bin selection ===
     if st.session_state.curve_created:
         data = st.session_state.curve_data
         realcount = data["realcount"]
@@ -99,7 +94,6 @@ if "uploaded_filename" in st.session_state:
                 else:
                     st.warning("⚠️ You already selected two points. Click 'Reset' to start over.")
 
-        # Show selected range
         if len(st.session_state.selected_points) == 2:
             x1 = st.session_state.selected_points[0]['x']
             x2 = st.session_state.selected_points[1]['x']
