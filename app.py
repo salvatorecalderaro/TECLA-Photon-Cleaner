@@ -1,73 +1,163 @@
 import streamlit as st
-import os
+import uuid
 from tempfile import NamedTemporaryFile
-from tecla_cleaner import read_file, clean_curve
+from tecla_cleaner import read_file, create_noisy_curve, clean_curve
+from plot_utils import plot_noisy_curve_interactive
+from streamlit_plotly_events import plotly_events
+import os
 
-
-
-
-# === Streamlit UI ===œ
+# === Streamlit UI ===
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
-st.write(
-    "Upload a `.fits` file to clean noisy photon bins and download the cleaned result."
-)
+st.write("Upload a `.fits` file to clean noisy photon bins and download the cleaned result.")
 
-uploaded_file = st.file_uploader("📂 Upload a FITS file", type=["fits"])
+# File upload - sempre visibile
+uploaded_file = st.file_uploader("📂 Upload a FITS file", type=["fits"], key=st.session_state.get("uploader_key", "default_uploader"))
+
+# Se non abbiamo ancora un file caricato e nemmeno uno appena uploadato, blocca e mostra messaggio
+if "uploaded_filename" not in st.session_state and not uploaded_file:
+    st.info("Please upload a `.fits` file to start.")
+    st.stop()  # blocca esecuzione finché non carichi un file
+
+# Sidebar per impostazioni
+st.sidebar.header("⚙️ Settings")
+bin_options = [2**i for i in range(7, 17)]  # [128, 256, ..., 65536]
+nt = st.sidebar.selectbox("Select number of bins (power of 2)", bin_options)
 
 if uploaded_file:
-    with NamedTemporaryFile(delete=False, suffix=".fits") as tmp_fits:
-        tmp_fits.write(uploaded_file.read())
-        tmp_fits_path = tmp_fits.name
+    st.success(f"✅ File `{uploaded_file.name}` uploaded successfully.")
+    st.warning("⚠️ Please select the number of bins from the sidebar **before clicking 'Create Curve'**.")
+    st.info(f"📊 Number of bins selected: **{nt}**")
 
-    try:
-        filename = os.path.basename(uploaded_file.name)
+    # Controlla se è cambiato il file o la selezione
+    if (
+        "uploaded_filename" not in st.session_state or
+        st.session_state.uploaded_filename != uploaded_file.name or
+        "nt" not in st.session_state or
+        st.session_state.nt != nt
+    ):
+        # Salva file temporaneo e leggi
+        with NamedTemporaryFile(delete=False, suffix=".fits") as tmp:
+            tmp.write(uploaded_file.read())
+            tmp_fits_path = tmp.name
+
         glowcurvenoise = read_file(tmp_fits_path)
 
-        st.success(f"✅ File `{filename}` uploaded successfully.")
+        st.session_state.uploaded_filename = uploaded_file.name
+        st.session_state.nt = nt
+        st.session_state.tmp_fits_path = tmp_fits_path
+        st.session_state.glowcurvenoise = glowcurvenoise
+        st.session_state.curve_data = None
+        st.session_state.selected_points = []
+        st.session_state.curve_created = False
 
-        st.sidebar.header("⚙️ Settings")
-        bin_options = [2**i for i in range(7, 17)]  # [128, 256, ..., 65536]
-        nt = st.sidebar.selectbox("Select number of bins (power of 2)", bin_options)
-        st.info(f"📊 Number of bins selected: **{nt}**")
+# Ora continua con la logica se abbiamo il file in session_state
+if "uploaded_filename" in st.session_state:
 
-        if st.button("🚀 Run TECLA Cleaning"):
-            with st.spinner("Cleaning in progress..."):
-                cleaned_path, plot_path = clean_curve(filename=filename, df=glowcurvenoise, nt=nt)
-                st.session_state["cleaned_path"] = cleaned_path
-                st.session_state["plot_path"] = plot_path
+    # === Create Curve Button ===
+    if not st.session_state.curve_created:
+        if st.button("🎨 Create Curve"):
+            with st.spinner("Generating curve..."):
+                realcount, realgrid, arrbin, enbin, posXbin, posYbin, intertbin, num = create_noisy_curve(
+                    st.session_state.glowcurvenoise,
+                    st.session_state.nt
+                )
+                st.session_state.curve_data = {
+                    "realcount": realcount,
+                    "realgrid": realgrid,
+                    "arrbin": arrbin,
+                    "enbin": enbin,
+                    "posXbin": posXbin,
+                    "posYbin": posYbin,
+                    "intertbin": intertbin,
+                    "num": num,
+                }
+                st.session_state.curve_created = True
+                st.success("📈 Curve created! Now select two bins.")
 
-    except Exception as e:
-        st.error(f"❌ Error: {e}")
+    # === Bin selection ===
+    if st.session_state.curve_created:
+        data = st.session_state.curve_data
+        realcount = data["realcount"]
+        realgrid = data["realgrid"]
+        num = data["num"]
+        nt = st.session_state.nt
 
-# Show results and download buttons
-if "cleaned_path" in st.session_state and "plot_path" in st.session_state:
-    st.success("✅ Cleaning complete!")
+        st.write("Select exactly TWO bins from the curve below")
+        st.markdown("🟢 Click once for the **start** and again for the **end** of the segment to be used.")
 
-    with open(st.session_state["cleaned_path"], "rb") as f:
-        st.download_button(
-            label="⬇️ Download Cleaned FITS File",
-            data=f.read(),
-            file_name=os.path.basename(st.session_state["cleaned_path"]),
-            mime="application/fits",
-        )
+        fig = plot_noisy_curve_interactive(st.session_state.uploaded_filename, realcount, realgrid, num, nt)
+        clicked_points = plotly_events(fig, click_event=True, override_height=500)
 
-    st.image(
-        st.session_state["plot_path"],
-        caption="Original vs Optimized Bin Counts",
-        use_container_width=True,
-    )
+        if st.button("🔄 Reset"):
+            st.session_state.selected_points = []
 
-    with open(st.session_state["plot_path"], "rb") as f:
-        st.download_button(
-            label="⬇️ Download Comparison Plot",
-            data=f.read(),
-            file_name=os.path.basename(st.session_state["plot_path"]),
-            mime="image/png",
-        )
+        if clicked_points:
+            for pt in clicked_points:
+                if len(st.session_state.selected_points) < 2:
+                    st.session_state.selected_points.append(pt)
+                else:
+                    st.warning("⚠️ You already selected two points. Click 'Reset' to start over.")
 
-# Optional reset
-if st.button("🔄 Reset"):
-    st.session_state.pop("cleaned_path", None)
-    st.session_state.pop("plot_path", None)
-    st.rerun()
+        # Show selected range
+        if len(st.session_state.selected_points) == 2:
+            x1 = st.session_state.selected_points[0]['x']
+            x2 = st.session_state.selected_points[1]['x']
+
+            if x1 > x2:
+                x1, x2 = x2, x1
+
+            startG = next((k for k, v in realgrid.items() if v == x1), None)
+            endG = next((k for k, v in realgrid.items() if v == x2), None)
+
+            st.success(f"✅ Selected bins: from bin `{startG}` to bin `{endG}`")
+
+            if st.button("🚀 Run TECLA Cleaning"):
+                with st.spinner("Running cleaning..."):
+                    glowcurvenoise = st.session_state.glowcurvenoise
+                    realcount = st.session_state.curve_data["realcount"]
+                    realgrid = st.session_state.curve_data["realgrid"]
+                    num = st.session_state.curve_data["num"]
+                    arrbin = st.session_state.curve_data["arrbin"]
+                    enbin = st.session_state.curve_data["enbin"]
+                    posXbin = st.session_state.curve_data["posXbin"]
+                    posYbin = st.session_state.curve_data["posYbin"]
+                    clean_curve_path, fig = clean_curve(st.session_state.uploaded_filename, glowcurvenoise, nt, realcount, realgrid, arrbin, enbin, posXbin, posYbin, num, startG, endG)
+                    st.success("🧹 Cleaning completed!")
+                    st.session_state["cleaned_path"] = clean_curve_path
+                    st.session_state["plot"] = fig
+
+            if "cleaned_path" in st.session_state and "plot" in st.session_state:
+                name = st.session_state.uploaded_filename.split(".fits")[0]
+                clean_curve_path = st.session_state["cleaned_path"]
+                fig = st.session_state["plot"]
+                st.plotly_chart(fig)
+                st.download_button(
+                    label="🖼️ Download coomparison plot",
+                    data=fig.to_image(format="png"),
+                    file_name=f"{name}_{nt}_TECLA.png",
+                    mime="image/png",
+                )
+                
+                with open(st.session_state["cleaned_path"], "rb") as f:
+                    st.download_button(
+                        label="⬇️ Download Cleaned FITS File",
+                        data=f.read(),
+                        file_name=os.path.basename(st.session_state["cleaned_path"]),
+                        mime="application/fits",
+                    )
+
+                
+
+            if st.sidebar.button("🔄 Reset ALL"):
+                keys_to_clear = [
+                    "uploaded_filename", "glowcurvenoise", "tmp_fits_path", "curve_data",
+                    "selected_points", "curve_created", "cleaned_path", "plot", "nt", "uploader_key"
+                ]
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.session_state["uploader_key"] = str(uuid.uuid4())
+
+        else:
+            st.info("ℹ️ Please select exactly TWO bins to proceed.")

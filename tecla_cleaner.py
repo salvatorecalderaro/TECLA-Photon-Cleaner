@@ -3,8 +3,9 @@ import streamlit as st
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
-from plot_utils import plot_noisy_curve, plot_or_vs_opt
+from plot_utils import plot_or_vs_opt
 from random import randint, sample
+
 
 n_iterations = 10**4
 
@@ -25,8 +26,7 @@ def read_file(path):
     return df
 
 
-def clean_curve(filename, df, nt):
-    print("Original df shape: ", df.shape)
+def create_noisy_curve(df, nt):
     times = df["TIME"].sort_values().values
     step = (np.max(times) - np.min(times)) / nt
     grid = np.array([np.min(times) + step * i for i in range(nt + 1)])
@@ -40,7 +40,6 @@ def clean_curve(filename, df, nt):
     st.write("Creating curve...")
     progress_bar = st.progress(0)
     status_text = st.empty()
-
     for i, (_, row) in enumerate(df.iterrows()):
         t = int((row["TIME"] - np.min(times)) / step)
         occurrenceel[t] += 1
@@ -74,20 +73,24 @@ def clean_curve(filename, df, nt):
             num += 1
 
     status_text.text("✅ Curve created!")
+    return realcount, realgrid, arrbin, enbin, posXbin, posYbin, intertbin, num
 
-    noisy_path_img = plot_noisy_curve(filename, realcount, realgrid, num, nt)
-    st.session_state["plot_path"] = noisy_path_img
-    st.image(
-        st.session_state["plot_path"],
-        caption=f"Original curve - N. Bins {nt}",
-        use_container_width=True,
-    )
 
-    startG, endG = 1,2000  
-    # TODO pernmetetre all'utenet di selezionare la parte buona e non.
-    #startB, endB = 5300, 5800
+def clean_curve(
+    filename,
+    df,
+    nt,
+    realcount,
+    realgrid,
+    arrbin,
+    enbin,
+    posXbin,
+    posYbin,
+    num,
+    startG,
+    endG,
+):
     good = [time for t in range(startG, endG + 1) for time in arrbin.get(t, [])]
-    #bad = [time for t in range(startB, endB + 1) for time in arrbin.get(t, [])]
 
     intertbinG = np.diff(good)
     goodtM = np.median(
@@ -173,19 +176,15 @@ def clean_curve(filename, df, nt):
 
     status_text.text("✅ Cleaning complete.")
 
-    
     kept_times = set()
     for t in range(num):
         kept_times.update(newarrbin[t])
 
     df["IS_NOISY"] = df["TIME"].apply(lambda x: 0 if x in kept_times else 1)
-    
-    print(f"Final df shape: {df.shape}")
 
     t = Table.from_pandas(df)
     name = filename.replace(".fits", "")
     cleaned_path = f"{name}_TECLA.fits"
     t.write(cleaned_path, overwrite=True)
-
-    plot_path = plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin,nt)
-    return cleaned_path, plot_path
+    fig = plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin, nt)
+    return cleaned_path, fig

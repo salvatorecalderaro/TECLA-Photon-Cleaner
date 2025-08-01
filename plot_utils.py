@@ -1,45 +1,63 @@
-import matplotlib.pyplot as plt
+
+import plotly.graph_objects as go
+from plotly.graph_objects import Figure, Scatter
 
 dpi = 1000
 
 
-def plot_noisy_curve(filename, realcount, realgrid, num, nt):
+def plot_noisy_curve_interactive(filename, realcount, realgrid, num, nt):
     name = filename.split(".fits")[0]
-    path = f"{name}_{nt}_NOISY.png"
-    y_original = [realcount[t] for t in range(0, num)]
-    x_vals = [realgrid[t] for t in range(0, num)]
+    x = [realgrid[t] for t in range(num)]
+    y = [realcount[t] for t in range(num)]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_vals, y_original, color="red", label="Original Count")
-    plt.xlabel("Time (realgrid)")
-    plt.ylabel("Number of Photons")
-    plt.title(f"{filename} - N. Bins {nt}")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(path, dpi=dpi)
-    plt.close()
-    return path
+    fig = Figure()
+    fig.add_trace(Scatter(
+        x=x, 
+        y=y, 
+        mode='lines+markers', 
+        line=dict(color='red'),        # line color red
+        marker=dict(color='red')       # marker color red
+    ))
+    fig.update_layout(
+        title=f'{name} Noisy - N. Bins {nt}',
+        xaxis_title='Time',
+        yaxis_title='Photon Count'
+    )
+    return fig
+
 
 
 def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin, nt):
     name = filename.split(".fits")[0]
-    path = f"{name}_{nt}_TECLA.png"
-    y_original = [realcount[t] for t in range(0, num)]
-    y_new = [len(newarrbin[t]) for t in range(0, num)]
-    x_vals = [realgrid[t] for t in range(0, num)]
+    y_original = [realcount[t] for t in range(num)]
+    y_new = [len(newarrbin[t]) for t in range(num)]
+    x_vals = [realgrid[t] for t in range(num)]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_vals, y_original, color="red", label="Original Count")
-    plt.plot(x_vals, y_new, color="blue", label="Optimized Count")
-    plt.xlabel("Time (realgrid)")
-    plt.ylabel("Number of Photons")
-    plt.title(
-        f"Comparison of Original vs Optimized Bin Counts – {filename} N. Bins {nt}"
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=x_vals,
+        y=y_original,
+        mode='lines+markers',
+        name='Original Count',
+        line=dict(color='red'),
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=x_vals,
+        y=y_new,
+        mode='lines+markers',
+        name='Optimized Count',
+        line=dict(color='lightblue')
+    ))
+
+    fig.update_layout(
+        title=f"Comparison of Original vs Optimized Bin Counts – {name} N. Bins {nt}",
+        xaxis_title="Time (realgrid)",
+        yaxis_title="Number of Photons",
+        legend=dict(x=0.01, y=0.99),
+        margin=dict(l=40, r=40, t=60, b=40),
+        template='simple_white'
     )
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(path, dpi=dpi)
-    plt.close()
-    return path
+
+    return fig
