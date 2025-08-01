@@ -8,6 +8,17 @@ import os
 
 os.environ["KALIEDO_SCOPE"] = "/tmp/kaleido"
 
+import subprocess
+
+def is_chrome_available():
+    try:
+        # Prova a eseguire il comando che verifica la presenza di chrome
+        subprocess.run(["google-chrome", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except Exception:
+        return False
+
+chrome_installed = is_chrome_available()
 
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")

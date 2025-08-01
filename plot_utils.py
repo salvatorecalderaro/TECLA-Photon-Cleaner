@@ -60,7 +60,6 @@ def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin, nt):
         legend=dict(x=0.01, y=0.99),
         margin=dict(l=40, r=40, t=60, b=40),
         template="simple_white",
-        plot_bgcolor="white",
         paper_bgcolor="white",
     )
 
