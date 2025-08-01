@@ -49,7 +49,7 @@ def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin, nt):
             y=y_new,
             mode="lines+markers",
             name="Optimized Count",
-            line=dict(color="lightblue"),
+            line=dict(color="blue"),
         )
     )
 
