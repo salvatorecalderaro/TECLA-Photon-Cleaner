@@ -1,5 +1,7 @@
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure, Scatter
+import kaleido
+kaleido.get_chrome_sync()
 
 
 def plot_noisy_curve_interactive(filename, realcount, realgrid, num, nt):
@@ -13,8 +15,8 @@ def plot_noisy_curve_interactive(filename, realcount, realgrid, num, nt):
             x=x,
             y=y,
             mode="lines+markers",
-            line=dict(color="red"),  # line color red
-            marker=dict(color="red"),  # marker color red
+            line=dict(color="red"),  
+            marker=dict(color="red"), 
         )
     )
     fig.update_layout(
@@ -55,7 +57,7 @@ def plot_or_vs_opt(filename, realcount, realgrid, num, newarrbin, nt):
 
     fig.update_layout(
         title=f"Comparison of Original vs Optimized Bin Counts – {name} N. Bins {nt}",
-        xaxis_title="Time (realgrid)",
+        xaxis_title="Time",
         yaxis_title="Number of Photons",
         legend=dict(x=0.01, y=0.99),
         margin=dict(l=40, r=40, t=60, b=40),
