@@ -5,10 +5,12 @@ from astropy.io import fits
 from astropy.table import Table
 from plot_utils import plot_or_vs_opt
 from random import randint, sample
-import time
+import os
 
 
-n_iterations = 10**4
+
+def running_on_cloud():
+    return os.environ.get("STREAMLIT_SERVER_HEADLESS", "") == "1"
 
 
 def convert_endian(df):
@@ -78,19 +80,27 @@ def create_noisy_curve(df, nt):
 
 
 def clean_curve(
-    filename,
-    df,
-    nt,
-    realcount,
-    realgrid,
-    arrbin,
-    enbin,
-    posXbin,
-    posYbin,
-    num,
-    startG,
-    endG,
-):
+        filename,
+        df,
+        nt,
+        realcount,
+        realgrid,
+        arrbin,
+        enbin,
+        posXbin,
+        posYbin,
+        num,
+        startG,
+        endG,
+    ):
+    
+    if running_on_cloud():
+        n_iterations = 1000
+    else:
+        n_iterations = 10000
+    
+    print(n_iterations)
+    
     good = [time for t in range(startG, endG + 1) for time in arrbin.get(t, [])]
 
     intertbinG = np.diff(good)
@@ -110,7 +120,7 @@ def clean_curve(
 
     newrealcount, newarrbin, newenbin, newposXbin, newposYbin = {}, {}, {}, {}, {}
 
-    st.write("🧹 Cleaning photon bins...")
+    st.write(f"🧹 Cleaning photon bins nt = {n_iterations}...")
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -172,8 +182,7 @@ def clean_curve(
                 newenbin[t] = best_sample["en"]
                 newposXbin[t] = best_sample["posX"]
                 newposYbin[t] = best_sample["posY"]
-        if t % 3 == 0 or t == num - 1:
-            progress_bar.progress(min((t + 1) / num, 1.0))
+        progress_bar.progress(min((t + 1) / num, 1.0))
 
     status_text.text("✅ Cleaning complete.")
 
