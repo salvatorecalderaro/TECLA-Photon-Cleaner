@@ -29,6 +29,9 @@ chrome_installed = is_chrome_available()
 
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
+st.subheader(
+    "The software available in this page will allow you to “clean” light-curves. i.e. to discriminate in a statistical way the signal from a certain asrophysical source from noise due to solar flares."
+)
 st.write(
     "Upload a `.fits` file to clean noisy photon bins and download the cleaned result."
 )
@@ -107,7 +110,9 @@ if "uploaded_filename" in st.session_state:
         num = data["num"]
         nt = st.session_state.nt
 
-        st.write("Select exactly TWO bins from the curve below")
+        st.write(
+            "Select exactly TWO bins from the light-curve below in order to select the target region that, according to your experience, best represents the astrophysical source you are observing. We will use the statistical features of this region in order to clean the light-curve and therefore discriminating in s statistical way the signal from noise due to solar flares."
+        )
         st.markdown(
             "🟢 Click once for the **start** and again for the **end** of the segment to be used."
         )
