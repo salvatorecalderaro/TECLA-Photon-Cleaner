@@ -11,7 +11,6 @@ import socket
 
 
 def running_on_cloud():
-    # Funziona anche su Streamlit Cloud
     hostname = socket.gethostname()
     return "streamlit" in hostname.lower() or "cloud" in hostname.lower() or "app" in os.environ.get("HOME", "")
 
@@ -101,10 +100,6 @@ def clean_curve(
         n_iterations = 1000
     else:
         n_iterations = 10000
-
-    
-    print(n_iterations)
-    
     good = [time for t in range(startG, endG + 1) for time in arrbin.get(t, [])]
 
     intertbinG = np.diff(good)
@@ -124,7 +119,7 @@ def clean_curve(
 
     newrealcount, newarrbin, newenbin, newposXbin, newposYbin = {}, {}, {}, {}, {}
 
-    st.write(f"🧹 Cleaning photon bins nt = {n_iterations}...")
+    st.write(f"🧹 Cleaning photon bins, nt = {n_iterations})")
     progress_bar = st.progress(0)
     status_text = st.empty()
 
