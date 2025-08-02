@@ -30,7 +30,7 @@ chrome_installed = is_chrome_available()
 st.set_page_config(page_title="TECLA Photon Cleaner")
 st.title("🔭 TECLA Photon Cleaner")
 st.subheader(
-    "The software available in this page will allow you to “clean” light-curves. i.e. to discriminate in a statistical way the signal from a certain asrophysical source from noise due to solar flares."
+    "The software available in this page will allow you to “clean” light-curves. i.e. to discriminate in a statistical way the signal from a certain astrophysical source from noise due to solar flares."
 )
 st.write(
     "Upload a `.fits` file to clean noisy photon bins and download the cleaned result."
