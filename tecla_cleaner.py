@@ -6,11 +6,14 @@ from astropy.table import Table
 from plot_utils import plot_or_vs_opt
 from random import randint, sample
 import os
+import socket
 
 
 
 def running_on_cloud():
-    return os.environ.get("STREAMLIT_SERVER_HEADLESS", "") == "1"
+    # Funziona anche su Streamlit Cloud
+    hostname = socket.gethostname()
+    return "streamlit" in hostname.lower() or "cloud" in hostname.lower() or "app" in os.environ.get("HOME", "")
 
 
 def convert_endian(df):
@@ -98,6 +101,7 @@ def clean_curve(
         n_iterations = 1000
     else:
         n_iterations = 10000
+
     
     print(n_iterations)
     
