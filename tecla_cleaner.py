@@ -127,8 +127,6 @@ def clean_curve(
             best_sample = None
 
             for _ in range(n_iterations):
-                if _ % 500 == 0:
-                    time.sleep(0.001)
                 low = max(1, int(interval[0]))
                 high = min(realcount[t], int(interval[1]))
                 if high < low:
@@ -174,7 +172,8 @@ def clean_curve(
                 newenbin[t] = best_sample["en"]
                 newposXbin[t] = best_sample["posX"]
                 newposYbin[t] = best_sample["posY"]
-        progress_bar.progress(min((t + 1) / num, 1.0))
+        if t % 3 == 0 or t == num - 1:
+            progress_bar.progress(min((t + 1) / num, 1.0))
 
     status_text.text("✅ Cleaning complete.")
 
