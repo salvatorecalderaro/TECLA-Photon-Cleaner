@@ -119,7 +119,7 @@ def clean_curve(
 
     newrealcount, newarrbin, newenbin, newposXbin, newposYbin = {}, {}, {}, {}, {}
 
-    st.write(f"🧹 Cleaning photon bins, nt = {n_iterations})")
+    st.write(f"🧹 Cleaning photon bins, N. Iterations = {n_iterations})")
     progress_bar = st.progress(0)
     status_text = st.empty()
 
