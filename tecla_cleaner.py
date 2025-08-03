@@ -7,12 +7,16 @@ from plot_utils import plot_or_vs_opt
 from random import randint, sample
 import os
 import socket
-
+from collections import defaultdict
 
 
 def running_on_cloud():
     hostname = socket.gethostname()
-    return "streamlit" in hostname.lower() or "cloud" in hostname.lower() or "app" in os.environ.get("HOME", "")
+    return (
+        "streamlit" in hostname.lower()
+        or "cloud" in hostname.lower()
+        or "app" in os.environ.get("HOME", "")
+    )
 
 
 def convert_endian(df):
@@ -31,28 +35,37 @@ def read_file(path):
     return df
 
 
-def create_noisy_curve(df, nt):
-    times = df["TIME"].sort_values().values
-    step = (np.max(times) - np.min(times)) / nt
-    grid = np.array([np.min(times) + step * i for i in range(nt + 1)])
+def create_noisy_curve(glowcurvedata, nt):
+    time_array = glowcurvedata["TIME"].values
+    min_t = np.min(time_array)
+    max_t = np.max(time_array)
+    step = (max_t - min_t) / nt
 
-    occurrenceel = {t: 0 for t in range(nt + 3)}
-    arrivalel = {t: [] for t in range(nt + 3)}
-    energyel = {t: [] for t in range(nt + 3)}
-    posXel = {t: [] for t in range(nt + 3)}
-    posYel = {t: [] for t in range(nt + 3)}
+    grid = np.linspace(min_t, max_t, nt + 1)
+
+    occurrenceel = defaultdict(int)
+    arrivalel = defaultdict(list)
+    energyel = defaultdict(list)
+    posXel = defaultdict(list)
+    posYel = defaultdict(list)
+
+    t_array = ((time_array - min_t) / step).astype(int)
+
+    rawx_array = glowcurvedata["RAWX"].values
+    rawy_array = glowcurvedata["RAWY"].values
+    pi_array = glowcurvedata["PI"].values
 
     st.write("Creating curve...")
     progress_bar = st.progress(0)
     status_text = st.empty()
-    for i, (_, row) in enumerate(df.iterrows()):
-        t = int((row["TIME"] - np.min(times)) / step)
+    for i in range(len(glowcurvedata)):
+        t = t_array[i]
         occurrenceel[t] += 1
-        arrivalel[t].append(row["TIME"])
-        posXel[t].append(row["RAWX"])
-        posYel[t].append(row["RAWY"])
-        energyel[t].append(row["PI"])
-        progress_bar.progress((i + 1) / len(df))
+        arrivalel[t].append(time_array[i])
+        posXel[t].append(rawx_array[i])
+        posYel[t].append(rawy_array[i])
+        energyel[t].append(pi_array[i])
+        progress_bar.progress((i + 1) / len(glowcurvedata))
 
     count = {t: occurrenceel[t] for t in range(0, nt)}
     realgrid = {}
@@ -82,20 +95,20 @@ def create_noisy_curve(df, nt):
 
 
 def clean_curve(
-        filename,
-        df,
-        nt,
-        realcount,
-        realgrid,
-        arrbin,
-        enbin,
-        posXbin,
-        posYbin,
-        num,
-        startG,
-        endG,
-    ):
-    
+    filename,
+    df,
+    nt,
+    realcount,
+    realgrid,
+    arrbin,
+    enbin,
+    posXbin,
+    posYbin,
+    num,
+    startG,
+    endG,
+):
+
     if running_on_cloud():
         n_iterations = 1000
     else:
